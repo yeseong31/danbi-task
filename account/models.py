@@ -60,7 +60,7 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = ['username', 'team', 'password']
 
     def __str__(self):
-        return self.email
+        return f'[{self.username}] {self.email}'
 
     def get_full_name(self):
         return self.username
