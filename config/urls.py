@@ -21,5 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='/task/', permanent=True)),
     path('task/', include('task.urls')),
-    path('auth/', include('account.urls')),
+    path('api/accounts/v1/', include('account.urls')),
 ]
