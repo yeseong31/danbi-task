@@ -30,6 +30,7 @@ class SubTask(models.Model):
     completed_date = models.DateTimeField(null=True, blank=True, verbose_name='completed_date')
     created_at = models.DateTimeField(default=datetime.now(), null=False, blank=False, verbose_name='created_at')
     modified_at = models.DateTimeField(null=True, blank=True, verbose_name='modified_at')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False, blank=False, verbose_name='task')
 
     def __str__(self):
         return f'[SubTask {self.id}]'
