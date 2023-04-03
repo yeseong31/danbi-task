@@ -48,7 +48,6 @@ class User(AbstractBaseUser):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, verbose_name='소속 팀')
 
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
 
     objects = UserManager()
@@ -57,7 +56,7 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = ['username', 'team']
 
     def __str__(self):
-        return self.username
+        return f'[{self.username}] {self.email}'
 
     def get_full_name(self):
         return self.username
