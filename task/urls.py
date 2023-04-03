@@ -5,5 +5,5 @@ from task.views import TasksAPI
 app_name = 'task'
 
 urlpatterns = [
-    path('', TasksAPI.as_view()),
+    path('', TasksAPI.as_view(), name='task_list'),
 ]
