@@ -1,7 +1,8 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueValidator
 
 from .models import User, Team
@@ -42,17 +43,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data['pw'])
         user.save()
+        Token.objects.create(user=get_user_model().objects.first())
         return user
     
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
     def validate(self, data):
-        user = authenticate(**data)
-        if user:
-            return Token.objects.get(user=user)  # 로그인 성공 시 토큰 반환
+        user = get_object_or_404(User, email=data['email'])
+        if user and user.check_password(data['password']):
+            return Token.objects.get(user=get_user_model().objects.first())
         raise serializers.ValidationError({'error': '제공된 자격 증명으로 로그인할 수 없습니다.'})
 
 
