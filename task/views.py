@@ -1,15 +1,16 @@
 from rest_framework import status
-from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from task.models import Task, SubTask
+from task.permissions import CustomReadOnly
 from task.serializers import SubTaskSerializer, TaskSerializer
 
 
 class TasksAPI(APIView):
+    permission_classes = [CustomReadOnly]
+    
     def get(self, request):
         """전체 Task 목록 조회"""
         tasks = Task.objects.all()
@@ -24,6 +25,8 @@ class TasksAPI(APIView):
 
 
 class TaskAPI(APIView):
+    permission_classes = [CustomReadOnly]
+    
     def get(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
         serializer = TaskSerializer(task)
