@@ -46,6 +46,7 @@ class User(AbstractBaseUser):
     email = models.EmailField(max_length=255, null=False, blank=False, unique=True, verbose_name='이메일')
     username = models.CharField(max_length=128, null=False, blank=False, verbose_name='사용자 이름')
     team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, verbose_name='소속 팀')
+    password = models.CharField(max_length=255, db_column='pw', verbose_name='비밀번호')
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
