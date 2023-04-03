@@ -10,9 +10,6 @@ from task.serializers import SubTaskSerializer, TaskSerializer
 
 
 class TasksAPI(APIView):
-    authentication_classes = [BasicAuthentication, ]
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    
     def get(self, request):
         """전체 Task 목록 조회"""
         tasks = Task.objects.all()
@@ -27,9 +24,6 @@ class TasksAPI(APIView):
 
 
 class TaskAPI(APIView):
-    authentication_classes = [BasicAuthentication, ]
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    
     def get(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
         serializer = TaskSerializer(task)
