@@ -4,7 +4,7 @@ from rest_framework import serializers
 from account.models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
     pw = serializers.CharField(
         write_only=True,
         required=True,

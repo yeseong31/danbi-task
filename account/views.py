@@ -8,12 +8,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 
 from account.models import User
-from account.serializers import UserSerializer
+from account.serializers import RegisterSerializer, LoginSerializer
 
 
 class RegisterAPIView(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             token = TokenObtainPairSerializer.get_token(user)
@@ -42,7 +42,7 @@ class LoginAPIView(APIView):
             payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
             pk = payload.get('user_id')
             user = get_object_or_404(User, pk=pk)
-            serializer = UserSerializer(instance=user)
+            serializer = LoginSerializer(instance=user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except jwt.exceptions.ExpiredSignatureError:
@@ -56,7 +56,7 @@ class LoginAPIView(APIView):
                 payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
                 pk = payload.get('user_id')
                 user = get_object_or_404(User, pk=pk)
-                serializer = UserSerializer(instance=user)
+                serializer = LoginSerializer(instance=user)
                 response = Response(serializer.data, status=status.HTTP_200_OK)
                 response.set_cookie('access', access)
                 response.set_cookie('refresh', refresh)
@@ -72,7 +72,7 @@ class LoginAPIView(APIView):
         user = get_object_or_404(User, email=email)
         if user is None or not user.check_password(pw):
             return Response({"message": "FAIL: Login"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = UserSerializer(user)
+        serializer = LoginSerializer(user)
         token = TokenObtainPairSerializer.get_token(user)
         refresh_token, access_token = str(token), str(token.access_token)
         response = Response(
