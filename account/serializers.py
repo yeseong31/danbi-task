@@ -14,10 +14,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True,
         validators=[validate_password],  # 비밀번호 검증
+        help_text='비밀번호를 입력해 주세요.'
     )
     pw2 = serializers.CharField(
         write_only=True,
         required=True,
+        help_text='확인을 위해 다시 한 번 비밀번호를 입력해 주세요.'
     )
 
     class Meta:
@@ -27,13 +29,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """비밀번호 일치 여부 확인"""
         if data['pw'] != data['pw2']:
-            raise serializers.ValidationError({'pw': "비밀번호가 일치하지 않습니다."})
+            raise serializers.ValidationError({'password': "비밀번호가 일치하지 않습니다."})
         return data
 
     def create(self, validated_data):
         user = User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
+            team=validated_data['team'],
         )
         user.set_password(validated_data['pw'])
         user.save()

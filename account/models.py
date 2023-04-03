@@ -14,19 +14,16 @@ class Team(models.Model):
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, username, team, pw=None, **extra_fields):
+    def create_user(self, email, username, team, pw=None):
         if email is None:
             raise TypeError('이메일은 필수 입력 사항입니다.')
         if username is None:
             raise TypeError('이름은 필수 입력 사항입니다.')
-        if pw is None:
-            raise TypeError('비밀번호는 필수 입력 사항입니다.')
 
         user = self.model(
             email=self.normalize_email(email),
             username=username,
-            team=team,
-            **extra_fields
+            team=team
         )
         user.set_password(pw)
         user.save(using=self._db)
@@ -37,7 +34,7 @@ class UserManager(BaseUserManager):
             email=email,
             username=username,
             team=team,
-            password=pw
+            pw=pw
         )
         user.is_admin = True
         user.save(using=self._db)
@@ -47,9 +44,8 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     id = models.AutoField(primary_key=True)
     email = models.EmailField(max_length=255, null=False, blank=False, unique=True, verbose_name='이메일')
-    password = models.CharField(max_length=255, db_column='pw', verbose_name='비밀번호')
     username = models.CharField(max_length=128, null=False, blank=False, verbose_name='사용자 이름')
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, verbose_name='소속된 팀')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, verbose_name='소속 팀')
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -57,7 +53,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'team', 'password']
+    REQUIRED_FIELDS = ['username', 'team']
 
     def __str__(self):
         return f'[{self.username}] {self.email}'
