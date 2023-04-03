@@ -38,7 +38,7 @@ class RegisterAPIView(APIView):
 class LoginAPIView(APIView):
     def get(self, request):
         try:
-            access = request.COOKIES['access']
+            access = request.COOKIES.get('access')
             payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
             pk = payload.get('user_id')
             user = get_object_or_404(User, pk=pk)
