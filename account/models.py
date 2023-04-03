@@ -1,5 +1,6 @@
 from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
 from django.db import models
+from rest_framework.generics import get_object_or_404
 
 
 class Team(models.Model):
@@ -19,6 +20,8 @@ class UserManager(BaseUserManager):
             raise TypeError('이메일은 필수 입력 사항입니다.')
         if username is None:
             raise TypeError('이름은 필수 입력 사항입니다.')
+        if team is None:
+            raise TypeError('팀은 필수 입력 사항입니다.')
 
         user = self.model(
             email=self.normalize_email(email),
@@ -29,14 +32,17 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, username, team, pw):
+    def create_superuser(self, email, username, team, password):
+        team = get_object_or_404(Team, pk=team)
         user = self.create_user(
             email=email,
             username=username,
             team=team,
-            pw=pw
+            pw=password
         )
         user.is_admin = True
+        user.is_staff = True
+        user.is_active = True
         user.save(using=self._db)
         return user
 
@@ -58,13 +64,17 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = ['username', 'team']
 
     def __str__(self):
-        return f'[{self.username}] {self.email}'
-
-    def get_full_name(self):
         return self.username
 
-    def get_short_name(self):
-        return self.username
+    @property
+    def is_superuser(self):
+        return self.is_admin
+
+    def has_perm(self, perm, obj=None):
+        return self.is_admin
+
+    def has_module_perms(self, app_label):
+        return self.is_admin
 
     class Meta:
         db_table = 'user'
