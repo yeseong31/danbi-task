@@ -18,21 +18,42 @@ from task.serializers import TaskDetailSerializer, SubTaskDetailSerializer, Task
 @permission_classes([CustomReadOnly])
 @authentication_classes([JWTAuthentication])
 def task_list(request):
-    # 사용자가 로그인을 한 경우에만 사용자의 팀을 찾을 수 있음...!!
-    # print(request.COOKIES['access'])
-    tasks = Task.objects.all()
-    sub_tasks = SubTask.objects.all()  # 사용자가 속한 팀에 따라 결과 달라야 함
-    data = {
-        'task': TaskListSerializer(tasks, many=True).data,
-        'subTask': SubTaskDetailSerializer(sub_tasks, many=True).data
-    }
-    return Response(data, status=status.HTTP_200_OK)
+    try:
+        tasks = Task.objects.all()
+        access = request.headers.get('Authorization')
+        if access is not None:
+            payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            user = get_object_or_404(User, pk=payload.get('user_id'))
+            team = get_object_or_404(Team, pk=user.team.id)
+            sub_tasks = SubTask.objects.filter(team=team)
+            data = {
+                'task': TaskListSerializer(tasks, many=True).data,
+                'subTask': SubTaskDetailSerializer(sub_tasks, many=True).data
+            }
+        else:
+            data = {
+                'task': TaskListSerializer(tasks, many=True).data
+            }
+        return Response(data, status=status.HTTP_200_OK)
+
+    except jwt.exceptions.ExpiredSignatureError:
+        return Response({'message': '로그인 세션이 만료되었습니다. 다시 로그인해주세요.'},
+                        status=status.HTTP_401_UNAUTHORIZED)
+
+    except jwt.exceptions.InvalidTokenError:
+        return Response({'message': '토큰이 올바르지 않습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['GET'])
 @permission_classes([CustomReadOnly])
 @authentication_classes([JWTAuthentication])
 def task_detail(request, pk):
+    """
+    Task 상새 내용 조회
+
+    :params:
+    - pk: Task 이릅
+    """
     task = get_object_or_404(Task, pk=pk)
     data = TaskDetailSerializer(task).data
     data['sub_task'] = [SubTaskDetailSerializer(s).data for s in task.subtask_set.all()]
@@ -52,8 +73,10 @@ def task_create(request):
     - team: 하위 업무로 지정한 팀(ID) 리스트
     """
     try:
-        access = request.headers.get('Authorization').split()[1]
-        payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
+        access = request.headers.get('Authorization')
+        if access is None:
+            raise jwt.exceptions.ExpiredSignatureError
+        payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
         user = get_object_or_404(User, pk=payload.get('user_id'))
         
         title = request.data.get('title')
@@ -109,8 +132,10 @@ def task_update(request, pk):
     - team: 하위 업무로 지정한 팀(ID) 리스트
     """
     try:
-        access = request.headers.get('Authorization').split()[1]
-        payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
+        access = request.headers.get('Authorization')
+        if access is None:
+            raise jwt.exceptions.ExpiredSignatureError
+        payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
         user = get_object_or_404(User, pk=payload.get('user_id'))
         
         task = get_object_or_404(Task, pk=pk)
