@@ -45,7 +45,7 @@ def task_detail(request, pk):
 def task_create(request):
     """
     Task 생성
-    
+
     :params:
     - title: Task 이릅
     - content: Task 내용
@@ -143,7 +143,7 @@ def task_update(request, pk):
                     return Response({'message': '이미 완료된 하위 업무는 삭제할 수 없습니다.'},
                                     status=status.HTTP_400_BAD_REQUEST)
                 target_sub_task.delete()
-
+        
         # 새로운 SubTask 생성
         for i in range(1, 8):
             team = get_object_or_404(Team, pk=i)
