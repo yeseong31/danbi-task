@@ -54,3 +54,12 @@ class TaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ('team', 'title', 'content', 'create_user')
+        
+        
+class TaskUpdateSerializer(serializers.ModelSerializer):
+    team = TeamSerializer(many=True)
+    create_user = UserProfileSerializer()
+    
+    class Meta:
+        model = Task
+        fields = ('team', 'title', 'content', 'create_user')
