@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import jwt
 from rest_framework import status
@@ -181,6 +182,7 @@ def task_update(request, pk):
                     team=team,
                     task=task
                 ).save()
+        task.modified_at = datetime.now()
         task.save()
         
         response = TaskUpdateSerializer(task).data
