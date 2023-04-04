@@ -4,7 +4,7 @@ from account.serializers import TeamSerializer, UserProfileSerializer
 from task.models import Task, SubTask
 
 
-class SubTaskSerializer(serializers.ModelSerializer):
+class SubTaskDetailSerializer(serializers.ModelSerializer):
     team = TeamSerializer(read_only=True)
 
     class Meta:
@@ -13,8 +13,16 @@ class SubTaskSerializer(serializers.ModelSerializer):
                   'completed_date', 'created_at', 'modified_at',)
         
 
+class SubTaskCreateSerializer(serializers.ModelSerializer):
+    team = TeamSerializer()
+    
+    class Meta:
+        model = SubTask
+        fields = ('team', )
+        
+
 class TaskListSerializer(serializers.ModelSerializer):
-    team = TeamSerializer(read_only=True)
+    team = TeamSerializer(read_only=True, many=True)
     create_user = UserProfileSerializer(read_only=True)
     
     class Meta:
@@ -37,3 +45,12 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def setup_preloading(cls, queryset):
         return queryset.select_related('team')
+    
+    
+class TaskCreateSerializer(serializers.ModelSerializer):
+    team = TeamSerializer(many=True)
+    create_user = UserProfileSerializer()
+    
+    class Meta:
+        model = Task
+        fields = ('team', 'title', 'content', 'create_user')
