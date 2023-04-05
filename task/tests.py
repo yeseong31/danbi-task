@@ -58,7 +58,7 @@ class TestTask(APITestCase):
         data = {
             'title': '테스트 업무',
             'content': '테스트 업무 설명입니다.',
-            'team_list': [1, 2, 3]  # 하위 업무로 등록할 팀 ID 리스트
+            'team_list': [self.team1.id, self.team2.id, self.team3.id]  # 하위 업무로 등록할 팀 ID 리스트
         }
         response = self.client.post(
             path=self.task_url,
@@ -173,6 +173,10 @@ class TestTask(APITestCase):
             **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
         )
         # print(response.data)
+        
+        self.sub_task1.is_complete = False  # 다른 테스트를 위해 완료 처리 rollback
+        self.sub_task1.save()
+        
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
     def test_update_task_for_non_author_user(self):
