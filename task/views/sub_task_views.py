@@ -30,7 +30,7 @@ class SubTaskView(APIView):
 
             if access is None:
                 raise jwt.exceptions.ExpiredSignatureError
-            payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
             user = get_object_or_404(User, pk=payload.get('user_id'))
             sub_task = SubTask.objects.get(pk=pk)
 

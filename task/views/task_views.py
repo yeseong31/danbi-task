@@ -27,7 +27,7 @@ class TasksView(APIView):
             tasks = Task.objects.all()
             access = request.headers.get('Authorization')
             if access is not None:
-                payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+                payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
                 user = get_object_or_404(User, pk=payload.get('user_id'))
                 team = get_object_or_404(Team, pk=user.team.id)
                 sub_tasks = SubTask.objects.filter(team=team)
@@ -61,7 +61,7 @@ class TasksView(APIView):
             access = request.headers.get('Authorization')
             if access is None:
                 raise jwt.exceptions.ExpiredSignatureError
-            payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
             user = get_object_or_404(User, pk=payload.get('user_id'))
 
             title = request.data.get('title')
@@ -135,7 +135,7 @@ class TaskView(APIView):
             access = request.headers.get('Authorization')
             if access is None:
                 raise jwt.exceptions.ExpiredSignatureError
-            payload = jwt.decode(access.split()[1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
             user = get_object_or_404(User, pk=payload.get('user_id'))
 
             task = get_object_or_404(Task, pk=pk)
