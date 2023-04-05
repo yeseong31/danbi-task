@@ -145,3 +145,16 @@ class TestTask(APITestCase):
         self.assertEqual(response.data['create_user']['team'], self.team1.id)
         self.assertEqual(response.data['sub_task'][0]['team']['id'], self.team1.id)
         self.assertEqual(response.data['sub_task'][1]['team']['id'], self.team6.id)
+        
+    def test_update_task_without_login(self):
+        data = {
+            'title': '수정된 테스트 업무',
+            'content': '수정된 테스트 업무 설명입니다.',
+            'team_list': [self.team1.id, self.team6.id]
+        }
+        response = self.client.put(
+            path=f'{self.task_url}{self.task2.id}/',
+            data=data,
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
