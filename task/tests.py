@@ -32,6 +32,7 @@ class TestTask(APITestCase):
         # URL
         self.login_url = '/api/accounts/v1/login/'
         self.create_task_url = '/task/'
+        self.get_task_url = f'/task/{self.task.id}/'
         # Bearer Token
         self.token = self.client.post(
             self.login_url,
@@ -76,4 +77,9 @@ class TestTask(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+    def test_get_task(self):
+        response = self.client.get(path=self.get_task_url)
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         
