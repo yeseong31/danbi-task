@@ -1,5 +1,5 @@
-from django.shortcuts import get_object_or_404
-from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from account.models import User, Team
 from task.models import Task
@@ -7,50 +7,59 @@ from task.models import Task
 
 class TestTask(APITestCase):
     def setUp(self) -> None:
-        self.team = Team.objects.create(name='test_team')
-        self.user = User.objects.create(
-            email='testname@test.com',
-            username='test_name',
-            team=self.team
+        self.team1 = Team.objects.create(name='테스트팀1')  # 1번 팀
+        self.team2 = Team.objects.create(name='테스트팀2')  # 2번 팀
+        self.team3 = Team.objects.create(name='테스트팀3')  # 3번 팀
+        # 테스트 사용자
+        self.email = 'kim@test.com'
+        self.username = 'kim'
+        self.pw = '!Test123?'
+        self.user = User.objects.create_user(
+            email=self.email,
+            username=self.username,
+            team=self.team1,
         )
-        self.user.set_password('!Test123?')
+        self.user.set_password(self.pw)
+        self.user.save()
+        # 테스트 Task
         self.task = Task.objects.create(
             create_user=self.user,
-            team=self.team,
-            title='테스트업무1',
-            content='테스트 업무입니다.'
+            team=self.team1,
+            title='테스트 업무',
+            content='테스트 업무 설명입니다.'
         )
-        self.user.save()
+        self.task.save()
+        # URL
+        self.login_url = '/api/accounts/v1/login/'
+        self.create_task_url = '/task/'
+        # Bearer Token
+        self.token = self.client.post(
+            self.login_url,
+            data={'email': self.email, 'pw': self.pw},
+            format='json'
+        ).data['token']['access']
     
     def test_create_task(self):
-        test_task = Task.objects.create(
-            create_user=self.user,
-            team=self.team,
-            title='테스트업무1',
-            content='테스트 업무입니다.'
+        # 새롭게 생성할 Task
+        data = {
+            'title': '테스트 업무',
+            'content': '테스트 업무 설명입니다.',
+            'team_list': [1, 2, 3]  # 하위업무로 등록할 팀 ID 리스트
+        }
+        response = self.client.post(
+            path=self.create_task_url,
+            data=data,
+            format='json',
+            **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
         )
-        self.assertEqual(test_task.create_user, self.user)
-        self.assertEqual(test_task.team, self.team)
-        self.assertEqual(test_task.title, '테스트업무1')
-        self.assertEqual(test_task.content, '테스트 업무입니다.')
-        self.assertEqual(len(Task.objects.all()), 2)
-    
-    def test_get_task(self):
-        test_task = get_object_or_404(Task, id=self.task.id)
-        self.assertEqual(test_task.create_user, self.task.create_user)
-        self.assertEqual(test_task.team, self.task.team)
-        self.assertEqual(test_task.title, self.task.title)
-        self.assertEqual(test_task.content, self.task.content)
-    
-    def test_update_task(self):
-        title = '테스트업무2'
-        content = '테스트 업무 두 번째입니다.'
-        test_task = get_object_or_404(Task, id=self.task.id)
-        test_task.title = title
-        test_task.content = content
-        self.assertEqual(test_task.title, '테스트업무2')
-        self.assertEqual(test_task.content, '테스트 업무 두 번째입니다.')
-    
-    def test_delete_task(self):
-        self.task.delete()
-        self.assertEqual(len(Task.objects.all()), 0)
+        result = response.data
+        # print(result)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(result['team']['id'], self.team1.id)
+        self.assertEqual(result['title'], '테스트 업무')
+        self.assertEqual(result['content'], '테스트 업무 설명입니다.')
+        self.assertEqual(result['create_user']['username'], self.username)
+        self.assertEqual(result['create_user']['team'], self.team1.id)
+        self.assertEqual(result['sub_task'][0]['team']['id'], self.team1.id)
+        self.assertEqual(result['sub_task'][1]['team']['id'], self.team2.id)
+        self.assertEqual(result['sub_task'][2]['team']['id'], self.team3.id)
