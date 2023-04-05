@@ -213,4 +213,25 @@ class TestTask(APITestCase):
         self.assertEqual(self.sub_task1.team.id, self.team1.id)  # 1번 SubTask는 담당 팀(1번)에서 완료 처리
         self.assertEqual(self.sub_task1.task.id, self.task2.id)  # 1번 SubTask는 2번 Task에 속함
         self.assertEqual(self.sub_task2.is_complete, True)  # 모든 SubTask 완료 처리 후 2번 Task 완료 처리
+    
+    def test_only_the_team_in_charge_corrects_the_sub_task(self):
+        user2 = User.objects.create_user(
+            email='han@test.com',
+            username='han',
+            team=self.team6,
+        )
+        user2.set_password('!Test456?')
+        user2.save()
+    
+        token = self.client.post(
+            self.login_url,
+            data={'email': 'han@test.com', 'pw': '!Test456?'},  # self.user2 로그인
+            format='json'
+        ).data['token']['access']
         
+        response = self.client.put(
+            path=f'{self.sub_task_url}{self.sub_task2.id}/',  # 6번 팀에 속한 han이 다른 팀의 SubTask 완료 처리 시도
+            **{'HTTP_AUTHORIZATION': f'Bearer {token}'}
+        )
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
