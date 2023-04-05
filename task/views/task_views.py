@@ -178,7 +178,7 @@ class TaskView(APIView):
             task.save()
 
             response = TaskUpdateSerializer(task).data
-            return Response(response, status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_201_CREATED)
 
         except jwt.exceptions.ExpiredSignatureError:
             return Response({'message': '로그인 세션이 만료되었습니다. 다시 로그인해주세요.'},
