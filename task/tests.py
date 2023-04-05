@@ -158,3 +158,20 @@ class TestTask(APITestCase):
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+    def test_update_task_contains_completed_sub_tasks(self):
+        self.sub_task1.is_complete = True
+        self.sub_task1.save()
+        
+        data = {
+            'title': '수정된 테스트 업무',
+            'content': '수정된 테스트 업무 설명입니다.',
+            'team_list': [self.team2.id, self.team3.id]  # 완료 처리된 1번 SubTask 삭제 시도
+        }
+        response = self.client.put(
+            path=f'{self.task_url}{self.task2.id}/',
+            data=data,
+            format='json',
+            **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
