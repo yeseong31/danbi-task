@@ -8,7 +8,7 @@ from account.models import User, Team
 class Task(models.Model):
     id = models.AutoField(primary_key=True)
     create_user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, verbose_name='create_user')
-    team = models.ManyToManyField(Team, null=False, blank=False, verbose_name='team', related_name='task_team')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=False, blank=False, verbose_name='team')
     title = models.CharField(max_length=255, null=False, blank=False, verbose_name='title')
     content = models.TextField(null=True, blank=True, verbose_name='content')
     is_complete = models.BooleanField(default=False, verbose_name='is_complete')
