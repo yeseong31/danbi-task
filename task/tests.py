@@ -73,6 +73,20 @@ class TestTask(APITestCase):
         self.assertEqual(result['sub_task'][1]['team']['id'], self.team2.id)
         self.assertEqual(result['sub_task'][2]['team']['id'], self.team3.id)
         
+    def create_task_without_filling_team_list(self):
+        data = {
+            'title': '테스트 업무',
+            'content': '테스트 업무 설명입니다.',
+            'team_list': []
+        }
+        response = self.client.post(
+            path=self.task_url,
+            data=data,
+            format='json',
+            **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
     def test_create_task_without_login(self):
         data = {
             'title': '테스트 업무',
@@ -101,3 +115,5 @@ class TestTask(APITestCase):
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['task']), 2)
+
+
