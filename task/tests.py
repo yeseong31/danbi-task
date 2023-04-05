@@ -10,6 +10,7 @@ class TestTask(APITestCase):
         self.team1 = Team.objects.create(name='테스트팀1')  # 1번 팀
         self.team2 = Team.objects.create(name='테스트팀2')  # 2번 팀
         self.team3 = Team.objects.create(name='테스트팀3')  # 3번 팀
+
         # 테스트 사용자
         self.email = 'kim@test.com'
         self.username = 'kim'
@@ -21,18 +22,25 @@ class TestTask(APITestCase):
         )
         self.user.set_password(self.pw)
         self.user.save()
+
         # 테스트 Task
-        self.task = Task.objects.create(
+        self.task1 = Task.objects.create(
             create_user=self.user,
             team=self.team1,
-            title='테스트 업무',
-            content='테스트 업무 설명입니다.'
+            title='테스트 업무 1번',
+            content='테스트 업무 1번에 대한 설명입니다.'
         )
-        self.task.save()
+        self.task2 = Task.objects.create(
+            create_user=self.user,
+            team=self.team1,
+            title='테스트 업무 2번',
+            content='테스트 업무 2번에 대한 설명입니다.'
+        )
+
         # URL
         self.login_url = '/api/accounts/v1/login/'
-        self.create_task_url = '/task/'
-        self.get_task_url = f'/task/{self.task.id}/'
+        self.task_url = '/task/'
+
         # Bearer Token
         self.token = self.client.post(
             self.login_url,
@@ -48,7 +56,7 @@ class TestTask(APITestCase):
             'team_list': [1, 2, 3]  # 하위업무로 등록할 팀 ID 리스트
         }
         response = self.client.post(
-            path=self.create_task_url,
+            path=self.task_url,
             data=data,
             format='json',
             **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
@@ -72,14 +80,14 @@ class TestTask(APITestCase):
             'team_list': [1, 2, 3]
         }
         response = self.client.post(
-            path=self.create_task_url,
+            path=self.task_url,
             data=data,
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
     def test_get_task(self):
-        response = self.client.get(path=self.get_task_url)
+        response = self.client.get(path=f'{self.task_url}{self.task1.id}/')
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
@@ -88,3 +96,8 @@ class TestTask(APITestCase):
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         
+    def test_get_task_list(self):
+        response = self.client.get(path=self.task_url)
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['task']), 2)
