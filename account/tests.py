@@ -9,13 +9,19 @@ class UserRegisterViewTest(APITestCase):
         self.factory = APIRequestFactory()
         self.register_url = '/api/accounts/v1/signup/'
         self.login_url = '/api/accounts/v1/login/'
+        
         self.team = Team.objects.create(name='테스트팀')  # 1번 팀
+        
+        self.email = 'kim@test.com'
+        self.username = 'kim'
+        self.pw = '!Test123?'
         self.user = User.objects.create_user(
-            email='kim@test.com',
-            username='kim',
+            email=self.email,
+            username=self.username,
             team=self.team
         )
-        self.user.set_password('!Test123?')
+        self.user.set_password(self.pw)
+        self.user.save()
     
     def test_default_values(self):
         self.assertEqual(self.user.email, 'kim@test.com')
@@ -45,8 +51,21 @@ class UserRegisterViewTest(APITestCase):
             data=data,
             format='json'
         )
-        
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['user']['email'], email)
         self.assertEqual(response.data['user']['username'], username)
         self.assertEqual(response.data['user']['team'], team)
+        
+    def test_login(self):
+        email = 'kim@test.com'
+        pw = '!Test123?'
+        self.assertEqual(self.email, email)
+        self.assertEqual(self.pw, pw)
+        
+        response = self.client.post(
+            self.login_url,
+            data={'email': email, 'pw': pw},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['user']['email'], email)
