@@ -117,10 +117,14 @@ class TestTask(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
     
     def test_get_task_list(self):
-        response = self.client.get(path=self.task_url)
+        response = self.client.get(
+            path=self.task_url,
+            **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
+        )
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['task']), 2)
+        self.assertEqual(len(response.data['subTask']), 1)
     
     def test_update_task(self):
         data = {
