@@ -68,7 +68,7 @@ class TasksView(APIView):
             content = request.data.get('content')
             team_list = request.data.get('team_list')
 
-            if not (title and content and team_list):
+            if not (title and content and (team_list or len(team_list) == 0)):
                 return Response({'message': '필요한 정보가 모두 주어지지 않았습니다.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
