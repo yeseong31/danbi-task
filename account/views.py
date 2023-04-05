@@ -27,7 +27,7 @@ class RegisterAPIView(APIView):
                         'refresh': refresh_token
                     },
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_201_CREATED
             )
             response.set_cookie('access', access_token, httponly=True)
             response.set_cookie('refresh', refresh_token, httponly=True)
