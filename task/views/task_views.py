@@ -145,40 +145,41 @@ class TaskView(APIView):
 
             title = request.data.get('title')
             content = request.data.get('content')
-            new_team_pk_list = request.data.get('team_list')
+            team_list = request.data.get('team_list')  # 새롭게 하위 업무를 담당할 팀 ID 리스트
 
-            if not (title and content and new_team_pk_list):
+            if not (title and content and team_list):
                 return Response({'message': '필요한 정보가 모두 주어지지 않았습니다.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             task.title = title
             task.content = content
-            old_team_pk_list = [s.team.id for s in task.subtask_set.all()]
 
-            # SubTask 삭제 가능 여부 확인
-            check = [0] * 8
-            for i in range(1, 8):
-                if i in new_team_pk_list:
-                    check[i] += 1
-                if i in old_team_pk_list:
-                    check[i] -= 1
-                if check[i] == 1:  # 생성
-                    SubTask.objects.create(
-                        team=get_object_or_404(Team, pk=i),
-                        task=task
-                    ).save()
-                if check[i] == -1:  # 삭제
-                    target_sub_task = task.subtask_set.get(team_id=i)
+            check = set()
+            sub_task_list = task.subtask_set.all()
+            for i, s in enumerate(sub_task_list):
+                if s.team.pk not in team_list:
+                    target_sub_task = sub_task_list[i]
                     if target_sub_task.is_complete:
                         return Response({'message': '이미 완료된 하위 업무는 삭제할 수 없습니다.'},
                                         status=status.HTTP_400_BAD_REQUEST)
                     target_sub_task.delete()
+                else:
+                    check.add(s.team.pk)
+
+            for i in team_list:
+                if i not in check:
+                    sub_task = SubTask.objects.create(
+                        team=get_object_or_404(Team, pk=i),
+                        task=task
+                    )
+                    sub_task.save()
 
             task.modified_at = datetime.now()
             task.save()
-
-            response = TaskUpdateSerializer(task).data
-            return Response(response, status=status.HTTP_200_OK)
+        
+            data = TaskUpdateSerializer(task).data
+            data['sub_task'] = [SubTaskDetailSerializer(s).data for s in task.subtask_set.all()]
+            return Response(data, status=status.HTTP_200_OK)
 
         except jwt.exceptions.ExpiredSignatureError:
             return Response({'message': '로그인 세션이 만료되었습니다. 다시 로그인해주세요.'},
