@@ -39,13 +39,14 @@ class TestTask(APITestCase):
         )
         
         # Task의 하위 업무로 등록된 테스트 SubTask
-        self.sub_task1 = SubTask.objects.create(team=self.team1, task=self.task2, is_complete=True)
+        self.sub_task1 = SubTask.objects.create(team=self.team1, task=self.task2)
         self.sub_task2 = SubTask.objects.create(team=self.team2, task=self.task2, is_complete=True)
-        self.sub_task3 = SubTask.objects.create(team=self.team3, task=self.task2)
+        self.sub_task3 = SubTask.objects.create(team=self.team3, task=self.task2, is_complete=True)
         
         # URL
         self.login_url = '/api/accounts/v1/login/'
         self.task_url = '/task/'
+        self.sub_task_url = '/task/sub/'
         
         # Bearer Token
         self.token = self.client.post(
@@ -125,7 +126,7 @@ class TestTask(APITestCase):
         data = {
             'title': '수정된 테스트 업무',
             'content': '수정된 테스트 업무 설명입니다.',
-            'team_list': [self.team1.id, self.team2.id, self.team6.id]  # 3번 팀 삭제, 6번 팀 추가
+            'team_list': [self.team2.id, self.team3.id, self.team6.id]  # 1번 팀 삭제, 6번 팀 추가
         }
         response = self.client.put(
             path=f'{self.task_url}{self.task2.id}/',
@@ -140,8 +141,8 @@ class TestTask(APITestCase):
         self.assertEqual(response.data['content'], '수정된 테스트 업무 설명입니다.')
         self.assertEqual(response.data['create_user']['username'], 'kim')
         self.assertEqual(response.data['create_user']['team'], self.team1.id)
-        self.assertEqual(response.data['sub_task'][0]['team']['id'], self.team1.id)
-        self.assertEqual(response.data['sub_task'][1]['team']['id'], self.team2.id)
+        self.assertEqual(response.data['sub_task'][0]['team']['id'], self.team2.id)
+        self.assertEqual(response.data['sub_task'][1]['team']['id'], self.team3.id)
         self.assertEqual(response.data['sub_task'][2]['team']['id'], self.team6.id)
     
     def test_update_task_without_login(self):
@@ -159,13 +160,10 @@ class TestTask(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
     
     def test_update_task_contains_completed_sub_tasks(self):
-        self.sub_task1.is_complete = True
-        self.sub_task1.save()
-        
         data = {
             'title': '수정된 테스트 업무',
             'content': '수정된 테스트 업무 설명입니다.',
-            'team_list': [self.team2.id, self.team3.id]  # 완료 처리된 1번 SubTask 삭제 시도
+            'team_list': [self.team1.id, self.team2.id]  # 완료 처리된 3번 SubTask 삭제 시도
         }
         response = self.client.put(
             path=f'{self.task_url}{self.task2.id}/',
@@ -174,10 +172,6 @@ class TestTask(APITestCase):
             **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
         )
         # print(response.data)
-        
-        self.sub_task1.is_complete = False  # 다른 테스트를 위해 완료 처리 rollback
-        self.sub_task1.save()
-        
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_update_task_for_non_author_user(self):
@@ -208,3 +202,15 @@ class TestTask(APITestCase):
         )
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_handle_task_completion_when_all_sub_task_are_completed(self):
+        response = self.client.put(
+            path=f'{self.sub_task_url}{self.sub_task1.id}/',  # 아직 완료되지 않은 1번 SubTask 완료 처리
+            **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
+        )
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.sub_task1.team.id, self.team1.id)  # 1번 SubTask는 담당 팀(1번)에서 완료 처리
+        self.assertEqual(self.sub_task1.task.id, self.task2.id)  # 1번 SubTask는 2번 Task에 속함
+        self.assertEqual(self.sub_task2.is_complete, True)  # 모든 SubTask 완료 처리 후 2번 Task 완료 처리
+        
