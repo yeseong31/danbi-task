@@ -16,26 +16,23 @@ class TestTask(APITestCase):
         self.team7 = Team.objects.create(name='수피')  # 7번 팀
 
         # 테스트 사용자
-        self.email = 'kim@test.com'
-        self.username = 'kim'
-        self.pw = '!Test123?'
-        self.user = User.objects.create_user(
-            email=self.email,
-            username=self.username,
+        self.user1 = User.objects.create_user(
+            email='kim@test.com',
+            username='kim',
             team=self.team1,
         )
-        self.user.set_password(self.pw)
-        self.user.save()
+        self.user1.set_password('!Test123?')
+        self.user1.save()
 
         # 테스트 Task
         self.task1 = Task.objects.create(
-            create_user=self.user,
+            create_user=self.user1,
             team=self.team1,
             title='테스트 업무 1번',
             content='테스트 업무 1번에 대한 설명입니다.'
         )
         self.task2 = Task.objects.create(
-            create_user=self.user,
+            create_user=self.user1,
             team=self.team1,
             title='테스트 업무 2번',
             content='테스트 업무 2번에 대한 설명입니다.'
@@ -53,7 +50,7 @@ class TestTask(APITestCase):
         # Bearer Token
         self.token = self.client.post(
             self.login_url,
-            data={'email': self.email, 'pw': self.pw},
+            data={'email': 'kim@test.com', 'pw': '!Test123?'},  # self.user1 로그인
             format='json'
         ).data['token']['access']
     
@@ -74,7 +71,7 @@ class TestTask(APITestCase):
         self.assertEqual(response.data['team']['id'], self.team1.id)
         self.assertEqual(response.data['title'], '테스트 업무')
         self.assertEqual(response.data['content'], '테스트 업무 설명입니다.')
-        self.assertEqual(response.data['create_user']['username'], self.username)
+        self.assertEqual(response.data['create_user']['username'], 'kim')
         self.assertEqual(response.data['create_user']['team'], self.team1.id)
         self.assertEqual(response.data['sub_task'][0]['team']['id'], self.team1.id)
         self.assertEqual(response.data['sub_task'][1]['team']['id'], self.team2.id)
@@ -141,7 +138,7 @@ class TestTask(APITestCase):
         self.assertEqual(response.data['team']['id'], self.team1.id)
         self.assertEqual(response.data['title'], '수정된 테스트 업무')
         self.assertEqual(response.data['content'], '수정된 테스트 업무 설명입니다.')
-        self.assertEqual(response.data['create_user']['username'], self.username)
+        self.assertEqual(response.data['create_user']['username'], 'kim')
         self.assertEqual(response.data['create_user']['team'], self.team1.id)
         self.assertEqual(response.data['sub_task'][0]['team']['id'], self.team1.id)
         self.assertEqual(response.data['sub_task'][1]['team']['id'], self.team6.id)
@@ -157,6 +154,7 @@ class TestTask(APITestCase):
             data=data,
             format='json',
         )
+        # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
     def test_update_task_contains_completed_sub_tasks(self):
@@ -174,4 +172,34 @@ class TestTask(APITestCase):
             format='json',
             **{'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
         )
+        # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_update_task_for_non_author_user(self):
+        user2 = User.objects.create_user(
+            email='han@test.com',
+            username='han',
+            team=self.team2,
+        )
+        user2.set_password('!Test456?')
+        user2.save()
+        
+        token = self.client.post(
+            self.login_url,
+            data={'email': 'han@test.com', 'pw': '!Test456?'},  # self.user2 로그인
+            format='json'
+        ).data['token']['access']
+        
+        data = {
+            'title': '수정된 테스트 업무',
+            'content': '수정된 테스트 업무 설명입니다.',
+            'team_list': [self.team1.id, self.team6.id]
+        }
+        response = self.client.put(
+            path=f'{self.task_url}{self.task2.id}/',
+            data=data,
+            format='json',
+            **{'HTTP_AUTHORIZATION': f'Bearer {token}'}
+        )
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
