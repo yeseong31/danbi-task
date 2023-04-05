@@ -83,3 +83,8 @@ class TestTask(APITestCase):
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
+    def test_get_non_existent_task(self):
+        response = self.client.get(path='/task/12345/')
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
