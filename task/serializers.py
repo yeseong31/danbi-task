@@ -22,7 +22,7 @@ class SubTaskCreateSerializer(serializers.ModelSerializer):
         
 
 class TaskListSerializer(serializers.ModelSerializer):
-    team = TeamSerializer(read_only=True, many=True)
+    team = TeamSerializer(read_only=True)
     create_user = UserProfileSerializer(read_only=True)
     
     class Meta:
@@ -48,7 +48,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     
     
 class TaskCreateSerializer(serializers.ModelSerializer):
-    team = TeamSerializer(many=True)
+    team = TeamSerializer()
     create_user = UserProfileSerializer()
     
     class Meta:
@@ -57,7 +57,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         
         
 class TaskUpdateSerializer(serializers.ModelSerializer):
-    team = TeamSerializer(many=True)
+    team = TeamSerializer()
     create_user = UserProfileSerializer()
     
     class Meta:

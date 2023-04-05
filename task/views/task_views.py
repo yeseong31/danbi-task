@@ -55,7 +55,7 @@ class TasksView(APIView):
         :args:
         - title: Task 이름
         - content: Task 설명
-        - team: 하위 업무로 지정할 팀 ID 리스트
+        - team_list: 하위 업무로 지정할 팀 ID 리스트
         """
         try:
             access = request.headers.get('Authorization')
@@ -66,21 +66,20 @@ class TasksView(APIView):
 
             title = request.data.get('title')
             content = request.data.get('content')
-            team = request.data.get('team')
+            team_list = request.data.get('team_list')
 
-            if not (title and content and team):
+            if not (title and content and team_list):
                 return Response({'message': '필요한 정보가 모두 주어지지 않았습니다.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            team_list = [get_object_or_404(Team, pk=i) for i in team]
+            team_list = [get_object_or_404(Team, pk=i) for i in team_list]
 
             task = Task.objects.create(
                 create_user=user,
                 title=title,
                 content=content,
+                team=user.team
             )
-            for team in team_list:
-                task.team.add(team)
             task.save()
 
             sub_task_list = []
@@ -130,7 +129,7 @@ class TaskView(APIView):
         :args:
         - title: Task 이름
         - content: Task 설명
-        - team: 하위 업무로 지정할 팀 ID 리스트
+        - team_list: 하위 업무로 지정할 팀 ID 리스트
         """
         try:
             access = request.headers.get('Authorization')
@@ -146,7 +145,7 @@ class TaskView(APIView):
 
             title = request.data.get('title')
             content = request.data.get('content')
-            new_team_pk_list = request.data.get('team')
+            new_team_pk_list = request.data.get('team_list')
 
             if not (title and content and new_team_pk_list):
                 return Response({'message': '필요한 정보가 모두 주어지지 않았습니다.'},
@@ -163,25 +162,18 @@ class TaskView(APIView):
                     check[i] += 1
                 if i in old_team_pk_list:
                     check[i] -= 1
+                if check[i] == 1:  # 생성
+                    SubTask.objects.create(
+                        team=get_object_or_404(Team, pk=i),
+                        task=task
+                    ).save()
                 if check[i] == -1:  # 삭제
-                    target_sub_task = task.subtask_set.get(team=get_object_or_404(Team, pk=i))
+                    target_sub_task = task.subtask_set.get(team_id=i)
                     if target_sub_task.is_complete:
                         return Response({'message': '이미 완료된 하위 업무는 삭제할 수 없습니다.'},
                                         status=status.HTTP_400_BAD_REQUEST)
                     target_sub_task.delete()
 
-            # 새로운 SubTask 생성
-            for i in range(1, 8):
-                team = get_object_or_404(Team, pk=i)
-                if i not in new_team_pk_list:
-                    task.team.remove(team)
-                else:
-                    task.team.add(team)
-                if check[i] == 1:
-                    SubTask.objects.create(
-                        team=team,
-                        task=task
-                    ).save()
             task.modified_at = datetime.now()
             task.save()
 
