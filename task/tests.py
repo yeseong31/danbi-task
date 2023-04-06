@@ -276,3 +276,29 @@ class TestTask(APITestCase):
         )
         # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+    def test_handle_sub_task_completion_that_have_already_been_completed(self):
+        """
+        SubTask 완료 처리 테스트 - 이미 완료 처리된 SubTask인 경우
+        """
+        user2 = User.objects.create_user(
+            email='han@test.com',
+            username='han',
+            team=self.team2,  # 2번 팀
+        )
+        user2.set_password('!Test456?')
+        user2.save()
+
+        token = self.client.post(
+            self.login_url,
+            data={'email': 'han@test.com', 'pw': '!Test456?'},  # self.user2 로그인
+            format='json'
+        ).data['token']['access']
+        
+        response = self.client.put(
+            path=f'{self.sub_task_url}{self.sub_task2.id}/',  # 이미 완료한 SubTask에 대해 완료 처리 시도
+            **{'HTTP_AUTHORIZATION': f'Bearer {token}'}
+        )
+        # print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
