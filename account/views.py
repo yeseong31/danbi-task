@@ -13,6 +13,9 @@ from account.serializers import RegisterSerializer, LoginSerializer
 
 class RegisterAPIView(APIView):
     def post(self, request):
+        """
+        회원가입 진행
+        """
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -37,6 +40,9 @@ class RegisterAPIView(APIView):
 
 class LoginAPIView(APIView):
     def get(self, request):
+        """
+        로그인 페이지
+        """
         try:
             access = request.COOKIES.get('access')
             payload = jwt.decode(access, os.getenv('SECRET_KEY'), algorithms=['HS256'])
@@ -67,6 +73,9 @@ class LoginAPIView(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
+        """
+        로그인 진행
+        """
         email = request.data.get('email')
         pw = request.data.get('pw')
         user = get_object_or_404(User, email=email)
@@ -91,6 +100,9 @@ class LoginAPIView(APIView):
         return response
 
     def delete(self, request):
+        """
+        로그아웃 진행
+        """
         response = Response({"message": "SUCCESS: Logout"}, status=status.HTTP_202_ACCEPTED)
         response.delete_cookie("access")
         response.delete_cookie("refresh")
