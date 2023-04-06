@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from account.models import User, Team
+from config.settings import SECRET_KEY
 from task.models import Task, SubTask
 from task.permissions import CustomReadOnly
 from task.serializers import TaskDetailSerializer, SubTaskDetailSerializer, TaskListSerializer, TaskCreateSerializer, \
@@ -27,13 +28,13 @@ class TasksView(APIView):
             tasks = Task.objects.all()
             access = request.headers.get('Authorization')
             if access is not None:
-                payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+                payload = jwt.decode(access.split()[-1], SECRET_KEY, algorithms=['HS256'])
                 user = get_object_or_404(User, pk=payload.get('user_id'))
                 team = get_object_or_404(Team, pk=user.team.id)
                 sub_tasks = SubTask.objects.filter(team=team)
                 data = {
                     'task': TaskListSerializer(tasks, many=True).data,
-                    'subTask': SubTaskDetailSerializer(sub_tasks, many=True).data
+                    'sub_task': SubTaskDetailSerializer(sub_tasks, many=True).data
                 }
             else:
                 data = {
@@ -135,7 +136,7 @@ class TaskView(APIView):
             access = request.headers.get('Authorization')
             if access is None:
                 raise jwt.exceptions.ExpiredSignatureError
-            payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = jwt.decode(access.split()[-1], SECRET_KEY, algorithms=['HS256'])
             user = get_object_or_404(User, pk=payload.get('user_id'))
 
             task = get_object_or_404(Task, pk=pk)
@@ -176,7 +177,7 @@ class TaskView(APIView):
 
             task.modified_at = datetime.now()
             task.save()
-        
+
             data = TaskUpdateSerializer(task).data
             data['sub_task'] = [SubTaskDetailSerializer(s).data for s in task.subtask_set.all()]
             return Response(data, status=status.HTTP_200_OK)

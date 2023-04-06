@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from account.models import User
+from config.settings import SECRET_KEY
 from task.models import SubTask, Task
 from task.permissions import CustomReadOnly
 from task.serializers import SubTaskDetailSerializer
@@ -30,15 +31,15 @@ class SubTaskView(APIView):
 
             if access is None:
                 raise jwt.exceptions.ExpiredSignatureError
-            payload = jwt.decode(access.split()[-1], os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = jwt.decode(access.split()[-1], SECRET_KEY, algorithms=['HS256'])
             user = get_object_or_404(User, pk=payload.get('user_id'))
             sub_task = SubTask.objects.get(pk=pk)
 
             if user.team.id != sub_task.team.id:
-                return Response({'message': '하위업무를 생성한 팀애 속한 사용자만이 완료 처리를 할 수 있습니다.'},
+                return Response({'message': '하위 업무를 생성한 팀애 속한 사용자만이 완료 처리를 할 수 있습니다.'},
                                 status=status.HTTP_401_UNAUTHORIZED)
             if sub_task.is_complete:
-                return Response({'message': '이미 완료한 하위업무입니다.'},
+                return Response({'message': '이미 완료한 하위 업무입니다.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             sub_task.is_complete = True

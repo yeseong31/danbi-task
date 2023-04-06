@@ -24,6 +24,9 @@ class UserRegisterViewTest(APITestCase):
         self.user.save()
     
     def test_default_values(self):
+        """
+        테스트 값 확인
+        """
         self.assertEqual(self.user.email, 'kim@test.com')
         self.assertEqual(self.user.username, 'kim')
         self.assertEqual(self.user.team, self.team)
@@ -34,6 +37,9 @@ class UserRegisterViewTest(APITestCase):
         self.assertEqual(self.login_url, '/api/accounts/v1/login/')
     
     def test_register(self):
+        """
+        회원가입 테스트
+        """
         email = 'han@test.com'
         username = 'han'
         team = self.team.id
@@ -57,6 +63,9 @@ class UserRegisterViewTest(APITestCase):
         self.assertEqual(response.data['user']['team'], team)
         
     def test_login(self):
+        """
+        로그인 테스트
+        """
         email = 'kim@test.com'
         pw = '!Test123?'
         self.assertEqual(self.email, email)
