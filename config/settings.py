@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['127.0.0.1']
 
 env = environ.Env()
 environ.Env.read_env(
-    env_file=os.path.join(BASE_DIR, '.env')
+    env_file=os.path.join(BASE_DIR, '.env')  # Env 파일
 )
 
 # Application definition
@@ -42,10 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'account.apps.AccountConfig',
-    'task.apps.TaskConfig',
+    'account',
+    'task',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
